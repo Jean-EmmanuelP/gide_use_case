@@ -60,6 +60,7 @@ class Document:
         self.chunk_content = chunk_content
         self.metadata = metadata
         self.clean_terms = self.precompute_clean_terms()
+        self.term_document_freq = self.precompute_term_freq()
         
     def precompute_clean_terms(self):
         return clean_text(self.chunk_content).split()
