@@ -3,9 +3,9 @@ import re
 
 def is_simple_content(line):
     """
-    Retourne True si la ligne représente du contenu simple (non formaté en titre).
-    On considère qu'une ligne est du contenu simple si elle n'est pas vide
-    et qu'elle ne commence pas par '#' ou '**'.
+    Retourne True si la ligne représente du contenu simple (texte normal).
+    Une ligne est considérée comme du contenu simple si elle n'est pas vide
+    et ne commence ni par '#' ni par '**'.
     """
     stripped = line.strip()
     if not stripped:
@@ -16,13 +16,13 @@ def is_simple_content(line):
 
 def count_headings(md_text):
     """
-    Compte les titres en début de ligne :
-      - Les titres Markdown (commençant par #)
-      - Les titres en gras (**…**)
+    Parcourt l'ensemble du texte et compte les titres en début de ligne :
+      - Titres Markdown (commençant par #)
+      - Titres en gras (délimités par **)
     Retourne un tuple (count_md, count_bold).
     """
     md_heading_pattern = re.compile(r'^(#{1,6})\s+(.*)$')
-    bold_heading_pattern  = re.compile(r'^\*\*(.+)\*\*$')
+    bold_heading_pattern = re.compile(r'^\*\*(.+)\*\*$')
     
     count_md = 0
     count_bold = 0
@@ -37,22 +37,52 @@ def count_headings(md_text):
             count_bold += 1
     return count_md, count_bold
 
-def parse_headings_md(md_text):
+def get_first_heading(md_text):
     """
-    Extrait les titres Markdown en début de ligne uniquement s'ils sont suivis
-    d'une ligne de contenu simple.
+    Parcourt le document pour trouver le tout premier titre (Markdown ou Bold)
+    en début de ligne et le retourne sous forme d'un tuple (index, style, level, title).
+    Si aucun titre n'est trouvé, retourne (None, None).
+    """
+    md_heading_pattern = re.compile(r'^(#{1,6})\s+(.*)$')
+    bold_heading_pattern = re.compile(r'^\*\*(.+)\*\*$')
+    lines = md_text.split('\n')
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        m_md = md_heading_pattern.match(stripped)
+        if m_md:
+            level = len(m_md.group(1))
+            title = m_md.group(2).strip()
+            return i, ("md", level, title)
+        m_bold = bold_heading_pattern.match(stripped)
+        if m_bold:
+            # Pour les titres en gras, on attribue un niveau fixe (ici 2)
+            level = 2
+            title = m_bold.group(1).strip()
+            return i, ("bold", level, title)
+    return None, None
+
+def parse_headings_md(md_text, start_index):
+    """
+    Extrait les titres Markdown en début de ligne à partir de start_index+1,
+    mais uniquement s'ils sont suivis d'une ligne de contenu simple.
     Retourne une liste de tuples (level, title).
     """
     md_heading_pattern = re.compile(r'^(#{1,6})\s+(.*)$')
     headings = []
     lines = md_text.split('\n')
     for i, line in enumerate(lines):
+        if i <= start_index:
+            continue
         stripped = line.strip()
         if not stripped:
             continue
         m = md_heading_pattern.match(stripped)
         if m:
-            # Vérifier la présence d'une ligne de contenu simple immédiatement après
+            title = m.group(2).strip()
+            level = len(m.group(1))
+            # Vérifier la présence d'une ligne de contenu simple après ce titre
             j = i + 1
             found_content = False
             while j < len(lines):
@@ -63,28 +93,29 @@ def parse_headings_md(md_text):
                     break
                 j += 1
             if found_content:
-                level = len(m.group(1))
-                title = m.group(2).strip()
                 headings.append((level, title))
     return headings
 
-def parse_headings_bold(md_text):
+def parse_headings_bold(md_text, start_index):
     """
-    Extrait les lignes en gras (**…**) en début de ligne uniquement s'il y a une
-    ligne de contenu simple immédiatement après.
-    On attribue un niveau fixe (ici 2) à ces titres.
+    Extrait les titres en gras (délimités par **…) en début de ligne à partir de start_index+1,
+    mais uniquement s'ils sont suivis d'une ligne de contenu simple.
+    On attribue ici un niveau fixe (2) aux titres en gras.
     Retourne une liste de tuples (level, title).
     """
     bold_heading_pattern = re.compile(r'^\*\*(.+)\*\*$')
     headings = []
     lines = md_text.split('\n')
     for i, line in enumerate(lines):
+        if i <= start_index:
+            continue
         stripped = line.strip()
         if not stripped:
             continue
         m = bold_heading_pattern.match(stripped)
         if m:
-            # Vérifier que la ligne suivante contient du contenu simple
+            title = m.group(1).strip()
+            level = 2
             j = i + 1
             found_content = False
             while j < len(lines):
@@ -95,24 +126,23 @@ def parse_headings_bold(md_text):
                     break
                 j += 1
             if found_content:
-                title = m.group(1).strip()
-                level = 2  # Niveau par défaut pour les titres en gras
                 headings.append((level, title))
     return headings
 
 def generate_toc(headings, doc_title=None):
     """
-    Génère une table des matières en Markdown.
-    - Si doc_title est fourni, il est affiché en en-tête.
+    Génère la table des matières en Markdown.
+    - Si doc_title est fourni, il est affiché en en-tête (niveau 1).
     - Chaque titre est transformé en lien d'ancrage simplifié.
+    La TOC ne contient pas de ligne "## Table des Matières".
     """
     toc_lines = []
     if doc_title:
-        toc_lines.append(f"# {doc_title}\n")
-    toc_lines.append("## Table des Matières\n")
+        toc_lines.append(f"# {doc_title}")
+        toc_lines.append("")  # Ligne vide pour séparer le titre principal de la liste
     for (level, title) in headings:
         indent = "  " * (level - 1)
-        # Générer une ancre simplifiée (tout en minuscules, espaces et caractères spéciaux remplacés par des tirets)
+        # Création d'une ancre simplifiée : tout en minuscules, les caractères non alphanumériques remplacés par des tirets
         anchor = title.lower()
         anchor = re.sub(r"[^a-z0-9]+", "-", anchor).strip("-")
         toc_lines.append(f"{indent}- [{title}](#{anchor})")
@@ -121,11 +151,14 @@ def generate_toc(headings, doc_title=None):
 def generate_tocs_in_dir(directory):
     """
     Pour chaque fichier .md dans 'directory' :
-      1. Analyse le contenu pour compter les titres Markdown et les titres en gras (en début de ligne).
-      2. Choisit le style dominant.
-      3. Extrait les titres correspondants, en ne gardant que ceux suivis d'une ligne de contenu simple.
-      4. Considère le premier titre comme le titre principal du document et l'affiche en en-tête du TOC.
-      5. Génère la TOC et l'enregistre dans un fichier <nom_fichier>_toc.md.
+      1. Analyse le contenu pour extraire le premier titre (peu importe le style), qui sera le titre principal.
+      2. Compte les titres par style dans le document.
+      3. Choisit le style dominant pour le reste du document.
+      4. Extrait les titres (à partir de la ligne suivante du premier titre) qui respectent les règles :
+         - Titre en début de ligne du style choisi.
+         - Suivi d'une ligne de contenu simple.
+      5. Génère la TOC avec le titre principal en tête et les titres extraits.
+      6. Enregistre la TOC dans un fichier <nom_fichier>_toc.md.
     """
     for filename in os.listdir(directory):
         if filename.endswith(".md"):
@@ -133,32 +166,33 @@ def generate_tocs_in_dir(directory):
             with open(md_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Comptage des titres selon chaque style
+            # Extraction du tout premier titre (quelle que soit sa forme)
+            first_index, first_heading = get_first_heading(content)
+            if first_heading:
+                doc_title = first_heading[2]  # Le titre principal
+            else:
+                doc_title = None
+                first_index = -1  # Aucun titre trouvé
+            
+            # Comptage des titres sur l'ensemble du document
             count_md, count_bold = count_headings(content)
-
-            # Choix du style dominant
+            
+            # Choix du style dominant pour les titres à partir du premier
             if count_md > count_bold:
-                headings = parse_headings_md(content)
+                headings = parse_headings_md(content, start_index=first_index)
                 style_used = "Markdown (#)"
             elif count_bold > count_md:
-                headings = parse_headings_bold(content)
+                headings = parse_headings_bold(content, start_index=first_index)
                 style_used = "Bold (**)"
             else:
                 # En cas d'égalité, choisir Markdown par défaut
-                headings = parse_headings_md(content)
+                headings = parse_headings_md(content, start_index=first_index)
                 style_used = "Markdown (#) par défaut"
             
-            # Le premier titre est considéré comme le titre principal
-            if headings:
-                doc_title = headings[0][1]
-                toc_headings = headings[1:]
-            else:
-                doc_title = None
-                toc_headings = []
-
-            toc_content = generate_toc(toc_headings, doc_title=doc_title)
+            # La TOC utilisera le titre principal en en-tête, et les autres titres en liste
+            toc_content = generate_toc(headings, doc_title=doc_title)
             
-            # Écriture de la TOC dans un fichier séparé
+            # Écriture de la TOC dans un fichier séparé (<nom_fichier>_toc.md)
             base_name, ext = os.path.splitext(filename)
             toc_filename = f"{base_name}_toc.md"
             toc_path = os.path.join(directory, toc_filename)

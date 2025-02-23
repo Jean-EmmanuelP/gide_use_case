@@ -1,7 +1,6 @@
-# - 1° La Société CENTRECOM SAINT-RAPHAEL, société civile immobilière au capital de 22 827 euros, dont le
+# BAIL COMMERCIAL CENTRE COMMERCIAL
 
-## Table des Matières
-
+  - [- 1° La Société CENTRECOM SAINT-RAPHAEL, société civile immobilière au capital de 22 827 euros, dont le](#1-la-soci-t-centrecom-saint-raphael-soci-t-civile-immobili-re-au-capital-de-22-827-euros-dont-le)
   - [- 2° La HABIDOM, société par actions simplifiée, au capital social de 81 762 573 euros, dont le siège social est à](#2-la-habidom-soci-t-par-actions-simplifi-e-au-capital-social-de-81-762-573-euros-dont-le-si-ge-social-est)
   - [D'AUTRE PART](#d-autre-part)
   - [A)** **DESCRIPTION DU CENTRE COMMERCIAL](#a-description-du-centre-commercial)

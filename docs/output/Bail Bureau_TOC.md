@@ -1,7 +1,6 @@
-# ENTRE:
+# BAIL COMMERCIAL
 
-## Table des Matières
-
+  - [ENTRE:](#entre)
   - [ET,](#et)
   - [EXPOSE](#expose)
   - [ARTICLE 1 • OBJET](#article-1-objet)
