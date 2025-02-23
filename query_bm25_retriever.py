@@ -98,8 +98,11 @@ else:
                 unique_terms = set(clean_terms)
                 for term in unique_terms:
                     term_document_freq[term] = term_document_freq.get(term, 0) + 1
-                    
+    
+    # Calcul de la longueur moyenne des documents
+    avgdl = sum(len(doc.clean_terms) for doc in documents) / len(documents) if documents else 0
+
     # Création de l'état du retriever et sauvegarde dans le fichier pickle
-    state = {'N': N, 'term_document_freq': term_document_freq, 'documents': documents}
+    state = {'N': N, 'term_document_freq': term_document_freq, 'documents': documents, 'avgdl': avgdl}
     with open(retriever_file, 'wb') as f:
         pickle.dump(state, f)
