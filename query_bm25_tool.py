@@ -107,7 +107,7 @@ class BM25RetrieverTool(Tool):
                     idf = math.log((self.N - df + 0.5) / (df + 0.5) + 1)
                     tf = doc.term_document_freq[term]
                     score += idf * ((tf * (self.k1 + 1)) / 
-                                    (tf + self.k1 * (1 - self.b + self.b * (self.N / self.avgdl))))
+                                    (tf + self.k1 * (1 - self.b + self.b * (doc.doc_len / self.avgdl))))
             doc_scores.append((doc, score))
 
         return sorted(doc_scores, key=lambda x: x[1], reverse=True)
@@ -120,5 +120,5 @@ class BM25RetrieverTool(Tool):
 
  #example usage
 bm25_tool = BM25RetrieverTool()
-results = bm25_tool.forward("Quel est le nom du bailleur ?")
-print (results)
+results = bm25_tool.forward("Le PRENEUR jouira desdits lieux en bon père de famille")
+print(results)

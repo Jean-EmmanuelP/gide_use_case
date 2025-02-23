@@ -21,12 +21,42 @@ refresh = False
 # Taille maximale d'un chunk (en nombre de caractères)
 CHUNK_SIZE = 2000
 
-# Fonction pour découper le contenu en sections
-# NOTE : Cette fonction dépend de votre logique de TOC et n'est pas finalisée ici.
+# Nouvelle fonction pour découper le contenu en sections à partir des titres
 def split_into_sections(content):
-    # TODO: Implémenter le découpage en sections basé sur votre TOC.
-    # Pour l'instant, on retourne tout le contenu comme une seule section.
-    return [("Titre Unique", content)]
+    """
+    Découpe le contenu Markdown en sections basées sur les titres.
+    Un titre est une ligne correspondant à un titre Markdown (commençant par #)
+    ou un titre en gras (délimité par **).
+    Retourne une liste de tuples (titre, contenu_de_la_section).
+    """
+    lines = content.split("\n")
+    sections = []
+    current_title = "Titre Unique"  # Valeur par défaut si aucun titre n'est trouvé
+    current_lines = []
+    md_heading_pattern = re.compile(r'^(#{1,6})\s+(.*)$')
+    bold_heading_pattern = re.compile(r'^\*\*(.+)\*\*$')
+    
+    for line in lines:
+        stripped = line.strip()
+        # Si la ligne correspond à un titre Markdown ou en gras
+        if md_heading_pattern.match(stripped) or bold_heading_pattern.match(stripped):
+            # Si on a déjà accumulé du contenu, on enregistre la section précédente
+            if current_lines:
+                sections.append((current_title, "\n".join(current_lines)))
+            # Mise à jour du titre en fonction du style détecté
+            if md_heading_pattern.match(stripped):
+                m = md_heading_pattern.match(stripped)
+                current_title = m.group(2).strip()
+            else:
+                m = bold_heading_pattern.match(stripped)
+                current_title = m.group(1).strip()
+            current_lines = []
+        else:
+            current_lines.append(line)
+    # Ajouter la dernière section si elle existe
+    if current_lines:
+        sections.append((current_title, "\n".join(current_lines)))
+    return sections
 
 # Fonction pour découper une section en chunks en respectant les limites de taille et les bornes de phrase
 def split_into_chunks(section, metadata):
@@ -61,6 +91,7 @@ class Document:
         self.metadata = metadata
         self.clean_terms = self.precompute_clean_terms()
         self.term_document_freq = self.precompute_term_freq()
+        self.doc_len = len(self.clean_terms)
         
     def precompute_clean_terms(self):
         return clean_text(self.chunk_content).split()
