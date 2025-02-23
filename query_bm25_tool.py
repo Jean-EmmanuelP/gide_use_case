@@ -73,28 +73,24 @@ class BM25RetrieverTool(Tool):
         if not query:
             return ""
         results = self.bm25_score(query, self.documents)[:num_snippets]
-        results.sort(key=lambda doc: doc[0].metadata['filename'])
-        grouped_results = groupby(results, key=lambda doc: doc[0].metadata['filename'])
         
         output = []
-        for doc_name, group in grouped_results:
-            output.append(f"========== {doc_name} ==========")
-            toc_file_path = os.path.join(self.output_dir, doc_name.rsplit('.', 1)[0] + '_toc.md')
-            
-            if os.path.exists(toc_file_path):
-                with open(toc_file_path, 'r') as toc_file:
-                    toc_content = toc_file.read()
-                    output.append("Table of Contents:")
-                    output.append(toc_content)
-                    output.append("\n------\n")
-            
-            for doc, score in group:
-                section_title = doc.metadata.get('section', 'Unknown Section')
-                output.append(f"Section: {section_title}")
-                snippet_content = '\n'.join(doc.chunk_content.split('\n')[3:])
-                output.append(f"\nRelevant Snippet:\n{snippet_content}\nScore: {score:.1f}")
+   
+        toc_file_path = os.path.join(os.path.dirname(self.input_file), os.path.basename(self.input_file).rsplit('.', 1)[0] + '_toc.md')
+        if os.path.exists(toc_file_path):
+            with open(toc_file_path, 'r') as toc_file:
+                toc_content = toc_file.read()
+                output.append("Table of Contents:")
+                output.append(toc_content)
                 output.append("\n------\n")
-        
+
+        for doc, score in results:
+            section_title = doc.metadata.get('section', 'Unknown Section')
+            output.append(f"Section: {section_title}")
+            snippet_content = '\n'.join(doc.chunk_content.split('\n')[3:])
+            output.append(f"\nRelevant Snippet:\n{snippet_content}\nScore: {score:.1f}")
+            output.append("\n------\n")
+            
         output.append("\n==========\n")
         return "\n".join(output)
 
@@ -122,7 +118,7 @@ class BM25RetrieverTool(Tool):
         text = text.translate(str.maketrans('', '', string.punctuation))
         return text
 
-#example usage
+ #example usage
 bm25_tool = BM25RetrieverTool()
 results = bm25_tool.forward("Quel est le nom du bailleur ?")
 print (results)
