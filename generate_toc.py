@@ -125,7 +125,7 @@ def generate_tocs_in_dir(directory):
       2. Choisit le style dominant.
       3. Extrait les titres correspondants, en ne gardant que ceux suivis d'une ligne de contenu simple.
       4. Considère le premier titre comme le titre principal du document et l'affiche en en-tête du TOC.
-      5. Génère la TOC et l'enregistre dans un fichier <nom_fichier>_TOC.md.
+      5. Génère la TOC et l'enregistre dans un fichier <nom_fichier>_toc.md.
     """
     for filename in os.listdir(directory):
         if filename.endswith(".md"):
@@ -160,7 +160,7 @@ def generate_tocs_in_dir(directory):
             
             # Écriture de la TOC dans un fichier séparé
             base_name, ext = os.path.splitext(filename)
-            toc_filename = f"{base_name}_TOC.md"
+            toc_filename = f"{base_name}_toc.md"
             toc_path = os.path.join(directory, toc_filename)
             with open(toc_path, 'w', encoding='utf-8') as f_out:
                 f_out.write(toc_content)
