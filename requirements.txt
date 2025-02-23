@@ -1,1 +1,3 @@
 'smolagents[litellm]' transformers
+pymupdf4llm
+path
