@@ -119,6 +119,6 @@ class BM25RetrieverTool(Tool):
         return text
 
  #example usage
-bm25_tool = BM25RetrieverTool()
-results = bm25_tool.forward("Le PRENEUR jouira desdits lieux en bon père de famille")
-print(results)
+# bm25_tool = BM25RetrieverTool()
+# results = bm25_tool.forward("Le PRENEUR jouira desdits lieux en bon père de famille")
+# print(results)
